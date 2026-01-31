@@ -27,8 +27,16 @@ This repository now contains an Astro + Starlight docs site plus TypeScript tool
    - `npm run build` – production build of the static site.
    - `npm run preview` – preview the built site locally.
    - `npm run lint` – run ESLint on the project.
+   - `npm run format` – run Prettier on the project.
    - `npm run typecheck` – run TypeScript type-checking with `tsc --noEmit`.
    - `npm test` – run the Vitest test suite (once tests exist).
+
+5. Content and site structure
+   - Content lives in `src/content/docs/` as `.mdx` files (Starlight convention).
+   - Content config is at `src/content.config.ts` (Astro 5 + Starlight loaders).
+   - Custom CSS theme is at `src/styles/custom.css`, registered via `customCss` in `astro.config.mts`.
+   - Static assets (favicon, images) go in `public/`.
+   - Deployment: GitHub Actions workflow at `.github/workflows/deploy.yml` builds and deploys to GitHub Pages on push to `main`.
 
 3. Single-test patterns (Vitest; once tests exist)
    - Single file: `npx vitest path/to/file.test.ts`.

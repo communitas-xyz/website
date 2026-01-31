@@ -2,10 +2,13 @@ import js from '@eslint/js';
 import ts from 'typescript-eslint';
 
 export default [
+  {
+    ignores: ['.astro/**', 'dist/**', 'node_modules/**', 'src/env.d.ts'],
+  },
   js.configs.recommended,
   ...ts.configs.recommended,
   {
-    files: ['**/*.{ts,tsx,js,jsx}'],
+    files: ['**/*.{ts,tsx,js,jsx,mjs}'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',

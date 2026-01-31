@@ -8,10 +8,11 @@ export default defineConfig({
       title: 'Communitas',
       description:
         'Building better communities. Tools, research, and guidance for intentional community design.',
-      social: {
-        github: 'https://github.com/communitas-xyz',
-      },
-
+      favicon: '/favicon.svg',
+      social: [
+        { icon: 'github', label: 'GitHub', href: 'https://github.com/communitas-xyz' },
+      ],
+      customCss: ['./src/styles/custom.css'],
       sidebar: [
         {
           label: 'Overview',
