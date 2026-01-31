@@ -13,5 +13,5 @@
     "noEmit": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "docs", "astro.config.*", "starlight.config.*"]
+  "include": ["src", "astro.config.*"]
 }

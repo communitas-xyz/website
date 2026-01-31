@@ -1,6 +1,6 @@
 ## Communitas.xyz – Agent Guide
 
-This repository currently contains only high-level product and research context in `BRIEF.md`. There is not yet an application codebase, toolchain, or configuration files (no `package.json`, test runner configs, linters, or formatters). This guide tells agentic coding tools how to behave as the codebase grows.
+This repository contains the Communitas.xyz website (Astro + Starlight), product and research context (`BRIEF.md`), and TypeScript tooling. This guide tells agentic coding tools how to behave in this codebase.
 
 ---
 
@@ -46,7 +46,7 @@ When adding new tools or commands, update this section so other agents always ha
 
 ### 3. Code Style – General Principles
 
-The repo has no explicit style config (`.editorconfig`, ESLint, Prettier, etc.) yet. Until those exist, follow these global rules so agents generate consistent code:
+The repo has ESLint configured (`eslint.config.mjs`) and TypeScript in strict mode (`tsconfig.json`). Follow these rules for consistent code:
 
 1. Language and typing
    - Prefer TypeScript over plain JavaScript for new code.
