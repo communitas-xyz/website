@@ -27,6 +27,18 @@ export default defineConfig({
           autogenerate: { directory: 'getting-started' },
         },
         {
+          label: 'Models',
+          autogenerate: { directory: 'models' },
+        },
+        {
+          label: 'Experiments',
+          autogenerate: { directory: 'experiments' },
+        },
+        {
+          label: 'Agents',
+          autogenerate: { directory: 'agents' },
+        },
+        {
           label: 'Governance',
           autogenerate: { directory: 'governance' },
         },

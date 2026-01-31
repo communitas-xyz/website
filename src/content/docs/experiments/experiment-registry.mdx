@@ -1,0 +1,111 @@
+---
+title: Experiment Registry
+description: Three planned experiments to validate Communitas's approach — bridge-building, newcomer onboarding, and language facilitation.
+---
+
+Communitas treats interventions as hypotheses, not features. Each intervention should be tested with a clear design, measurable outcomes, and ethical guardrails before it becomes a default.
+
+This page documents three planned experiments. They are designed but not yet completed. Results will be published here as they become available.
+
+## Bridge-building experiment
+
+### Hypothesis
+
+Opt-in introductions between members in different clusters increase cross-cluster collaboration without increasing moderation load or conflict.
+
+### Method
+
+**Design:** Randomized encouragement. Members in the treatment group receive suggestions for cross-cluster introductions based on shared interests, complementary skills, or overlapping work. Members in the control group receive no suggestions. Both groups can still form connections organically.
+
+**Intervention:** The system identifies pairs of members in different clusters who share at least one topic interest and have no existing direct connection. It proposes an introduction to both parties. If both consent, a steward facilitates the introduction. See [connection interventions](/models/intervention-taxonomy/#connection-interventions).
+
+**Duration:** 8 to 12 weeks, to allow time for new ties to develop into reciprocal relationships.
+
+### Outcome metrics
+
+- **New reciprocal ties** — Did introduced members interact more than once? Did they develop an ongoing relationship?
+- **Cross-topic contributions** — Did members start participating in threads or projects outside their original cluster?
+- **Retention** — Did members in the treatment group remain active at higher rates?
+- **Conflict rate** — Did cross-cluster introductions increase moderation incidents? (This is a safety metric — the intervention should not increase conflict.)
+
+### Ethical guardrails
+
+- Both parties must opt in before any introduction happens.
+- Members can decline suggestions without consequence or visibility to others.
+- The experiment does not withhold beneficial interventions from the control group — it adds suggestions to the treatment group.
+- All suggestions and outcomes are logged for [audit](/governance/governance-and-safety-principles/).
+
+### What success looks like
+
+A measurable increase in reciprocal cross-cluster ties and cross-topic contributions in the treatment group, with no increase in conflict rate. Even modest effects validate the approach — the goal is to demonstrate that targeted, opt-in introductions create real connections, not just activity.
+
+## Newcomer onboarding experiment
+
+### Hypothesis
+
+Personalized onboarding paths combined with mentor matching reduce newcomer drop-off and accelerate time-to-first-contribution.
+
+### Method
+
+**Design:** Controlled comparison. New members in the treatment group receive a personalized "first three steps" path based on their stated interests, plus a matched mentor who checks in during their first two weeks. New members in the control group receive the community's standard onboarding experience.
+
+**Intervention:** The system generates a short onboarding path: where to introduce yourself, what to read or explore first, and a specific person to talk to (the matched mentor). The mentor is an existing member selected for shared interests, communication style compatibility, and willingness to participate. See [onboarding interventions](/models/intervention-taxonomy/#onboarding-interventions).
+
+**Duration:** 4 to 8 weeks per cohort, with follow-up at 30 days to measure sustained participation.
+
+### Outcome metrics
+
+- **Week-2 activity** — Is the newcomer still active after their second week?
+- **First reply received** — How quickly does the newcomer receive a substantive response from another member?
+- **Time-to-first-contribution** — How long before the newcomer contributes something beyond their introduction (a reply, a review, a resource)?
+- **Mentor relationship quality** — Did the mentor and newcomer interact beyond the initial check-in? (Self-reported and observed.)
+
+### Ethical guardrails
+
+- Newcomers in the control group still receive the community's existing onboarding. The experiment adds support; it does not withhold it.
+- Mentors participate voluntarily and can step back at any time.
+- Newcomer data is handled with [data minimization principles](/governance/governance-and-safety-principles/#data-minimization). The system tracks participation patterns, not message content.
+- All matching decisions and outcomes are logged.
+
+### What success looks like
+
+Higher week-2 retention and faster time-to-first-contribution in the treatment group. A secondary signal: newcomers in the treatment group report (or demonstrate) stronger early connections. The experiment validates that personalized, human-mediated onboarding outperforms generic welcome messages.
+
+## Language facilitation experiment
+
+### Hypothesis
+
+AI-suggested facilitation prompts — de-escalation cues, clarity suggestions, and conversational structure nudges — improve conversation quality and reduce moderator load.
+
+### Method
+
+**Design:** Stepped-wedge rollout. Facilitation suggestions are introduced to different channels or subcommunities at staggered intervals, allowing each group to serve as its own control during the pre-intervention period.
+
+**Intervention:** When the [language model](/models/community-graph/#language-model) detects early signs of conversational difficulty — rising negativity, stalled threads, rapid escalation — it suggests a facilitation prompt to the moderator or thread participants. Suggestions include de-escalation language, clarifying questions, or prompts to redirect the conversation. See [facilitation interventions](/models/intervention-taxonomy/#facilitation-interventions).
+
+**Duration:** 6 to 10 weeks per phase, with at least two stagger points.
+
+### Outcome metrics
+
+- **Conversational health** — Changes in thread sentiment, constructiveness, and resolution rate after facilitation prompts are introduced.
+- **Sentiment shifts** — Whether conversations that receive facilitation prompts show measurable de-escalation compared to similar conversations that did not.
+- **Moderator load** — Whether moderators spend less time on reactive intervention after facilitation prompts are available.
+- **Member perception** — Whether participants find the prompts helpful, neutral, or intrusive. (Surveyed.)
+
+### Ethical guardrails
+
+- Facilitation prompts are suggestions, not automated messages. A human reviews and decides whether to use them.
+- Members are informed that AI-assisted facilitation is active in their community. No undisclosed AI participation.
+- Prompts are designed to support conversation, not to suppress disagreement or enforce a particular tone.
+- The experiment includes a mechanism for members to flag prompts as unhelpful or inappropriate.
+- All prompts, decisions, and outcomes are logged for [audit](/governance/governance-and-safety-principles/).
+
+### What success looks like
+
+Measurable improvement in conversational health metrics in post-intervention periods, combined with reduced moderator load. The critical constraint: members should perceive the facilitation as helpful or neutral — not as surveillance or tone policing. If member perception is negative, the intervention needs redesign regardless of metric improvements.
+
+---
+
+These experiments are designed to be run in real communities with real stakes. They prioritize safety over speed: each one includes opt-in consent, human approval, and audit logging as non-negotiable requirements. Results — positive, negative, or ambiguous — will be published openly.
+
+For guidance on running your own version of these experiments, see [how to pilot in your community](/getting-started/pilot-in-your-community/).

@@ -1,0 +1,75 @@
+---
+title: Community Graph Model
+description: Reference for the data model that powers Communitas — entities, edges, weights, and the three internal models.
+---
+
+Communitas builds a living model of your community as a dynamic, weighted, typed graph. This page documents the entities, relationships, and internal models that make up that graph.
+
+The graph is not a frozen snapshot. It updates as interactions happen, tracks how relationships form and weaken over time, and supports temporal queries — "what changed this month?" is a first-class question. This reflects [research on dynamic social networks](/research/foundations/) showing that communities form, split, and merge continuously.
+
+## Entity types
+
+The graph contains eight entity types. Each represents something a community produces or organizes around.
+
+- **Member** — A person in the community. Carries attributes like join date, activity level, and cluster membership over time.
+- **Thread** — A conversation container (a forum post, a Slack thread, a Discord channel discussion). Threads connect members to topics and to each other.
+- **Message** — A single contribution within a thread. The atomic unit of interaction.
+- **Topic** — A subject area or theme, derived from content analysis. Topics connect members who share interests but may not interact directly.
+- **Event** — A synchronous gathering (meeting, call, workshop, conference). Events create co-attendance edges that don't appear in text-based interaction data.
+- **Artifact** — A document, code repository, resource, or shared output. Artifacts connect contributors and capture collaboration beyond conversation.
+- **Policy/Norm** — A community rule, guideline, or behavioral expectation. Policies connect to the members and threads they govern. See [governance principles](/governance/governance-and-safety-principles/).
+- **Intervention** — A specific action taken by the system or a steward: an introduction, a prompt, a norms reminder. Interventions are first-class entities so their outcomes can be tracked. See the [intervention taxonomy](/models/intervention-taxonomy/).
+
+## Edge types
+
+Edges represent relationships between entities. Each edge is typed, directed, weighted, and timestamped.
+
+| Edge | From | To | What it captures |
+|------|------|----|------------------|
+| `replies_to` | Message | Message | Conversational structure and engagement |
+| `mentions` | Message | Member | Directed attention and recognition |
+| `co_attends` | Member | Member | Shared presence at events |
+| `co_authors` | Member | Member | Joint work on artifacts |
+| `endorses` | Member | Member | Explicit support (reactions, upvotes, approvals) |
+| `moderates` | Member | Thread | Governance activity and moderation load |
+| `introduces` | Member | Member | Brokered connections, tracked for outcomes |
+| `cites` | Artifact | Artifact | Knowledge lineage and influence |
+| `shares_topic` | Member | Topic | Interest overlap, even without direct interaction |
+| `conflicts_with` | Member | Member | Disagreement or escalation patterns |
+
+Edges are not binary. A `replies_to` edge between two members who exchange messages daily carries different weight than one based on a single reply six months ago.
+
+## Edge weight properties
+
+Edge weights combine multiple signals to reflect relationship strength and quality:
+
+- **Recency-weighted frequency** — Recent interactions count more than old ones. A burst of activity last week matters more than steady activity a year ago. Weights decay over time unless renewed.
+- **Reciprocity** — Bidirectional relationships are weighted higher than one-directional ones. If only one person initiates, the edge reflects that asymmetry.
+- **Sentiment stability** — Edges between members whose interactions are consistently constructive carry more weight than volatile relationships that swing between positive and negative.
+- **Collaboration outcomes** — Edges formed through successful joint work (merged pull requests, co-authored documents, completed projects) carry additional weight reflecting demonstrated trust.
+
+## Three internal models
+
+Communitas maintains three complementary models, each serving a different function.
+
+### Community graph model
+
+The primary model: a dynamic, weighted, typed graph as described above. It captures who interacts with whom, how, when, and through what. This model powers [health metrics](/models/health-metrics/) — bridge detection, fragmentation risk, newcomer integration, participation concentration.
+
+The graph is temporal. You can query it at any point in time, compare windows, and detect structural changes: clusters forming, bridges weakening, newcomers integrating or dropping off.
+
+### Language model
+
+A model of community communication patterns — not a chatbot, but an analytical layer. It captures style features (formality, tone, linguistic accommodation), discourse structure (how threads develop, where conversations stall or escalate), and topic-agnostic health predictors (conversational patterns that correlate with retention, satisfaction, or conflict regardless of subject matter).
+
+This model draws on [research into linguistic style matching and conversational structure](/research/foundations/) as signals of community health.
+
+### Knowledge model
+
+A research knowledge graph built using GraphRAG patterns. It stores the community's norms, decision logs, and the research corpus that grounds Communitas's recommendations. The knowledge model connects papers to claims, claims to methods, methods to interventions, and interventions to outcomes.
+
+When the system suggests an intervention, the knowledge model provides the citation trail: what evidence supports it, what mechanism it relies on, and where the evidence is weak or context-dependent.
+
+---
+
+These three models work together. The community graph tells you what's happening structurally. The language model tells you what's happening conversationally. The knowledge model tells you what the research says about what you're seeing — and what to try next.
