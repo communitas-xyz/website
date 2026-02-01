@@ -24,18 +24,18 @@ The graph contains eight entity types. Each represents something a community pro
 
 Edges represent relationships between entities. Each edge is typed, directed, weighted, and timestamped.
 
-| Edge | From | To | What it captures |
-|------|------|----|------------------|
-| `replies_to` | Message | Message | Conversational structure and engagement |
-| `mentions` | Message | Member | Directed attention and recognition |
-| `co_attends` | Member | Member | Shared presence at events |
-| `co_authors` | Member | Member | Joint work on artifacts |
-| `endorses` | Member | Member | Explicit support (reactions, upvotes, approvals) |
-| `moderates` | Member | Thread | Governance activity and moderation load |
-| `introduces` | Member | Member | Brokered connections, tracked for outcomes |
-| `cites` | Artifact | Artifact | Knowledge lineage and influence |
-| `shares_topic` | Member | Topic | Interest overlap, even without direct interaction |
-| `conflicts_with` | Member | Member | Disagreement or escalation patterns |
+| Edge             | From     | To       | What it captures                                  |
+| ---------------- | -------- | -------- | ------------------------------------------------- |
+| `replies_to`     | Message  | Message  | Conversational structure and engagement           |
+| `mentions`       | Message  | Member   | Directed attention and recognition                |
+| `co_attends`     | Member   | Member   | Shared presence at events                         |
+| `co_authors`     | Member   | Member   | Joint work on artifacts                           |
+| `endorses`       | Member   | Member   | Explicit support (reactions, upvotes, approvals)  |
+| `moderates`      | Member   | Thread   | Governance activity and moderation load           |
+| `introduces`     | Member   | Member   | Brokered connections, tracked for outcomes        |
+| `cites`          | Artifact | Artifact | Knowledge lineage and influence                   |
+| `shares_topic`   | Member   | Topic    | Interest overlap, even without direct interaction |
+| `conflicts_with` | Member   | Member   | Disagreement or escalation patterns               |
 
 Edges are not binary. A `replies_to` edge between two members who exchange messages daily carries different weight than one based on a single reply six months ago.
 
