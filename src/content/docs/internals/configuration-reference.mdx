@@ -1,0 +1,285 @@
+---
+title: Configuration Reference
+description: Every configuration file in the Communitas repository, what it controls, and notable choices.
+---
+
+## File inventory
+
+| File                           | Purpose                                                     |
+| ------------------------------ | ----------------------------------------------------------- |
+| `package.json`                 | Project metadata, scripts, dependencies, engine constraints |
+| `astro.config.mts`             | Astro, Starlight, Vite, and Tailwind configuration          |
+| `tsconfig.json`                | TypeScript compiler options                                 |
+| `eslint.config.mjs`            | ESLint flat config                                          |
+| `.prettierrc`                  | Prettier formatting rules                                   |
+| `.nvmrc`                       | Pinned Node.js version                                      |
+| `.editorconfig`                | Editor-level formatting defaults                            |
+| `.gitignore`                   | Git exclusions                                              |
+| `.github/workflows/deploy.yml` | CI/CD pipeline for GitHub Pages                             |
+| `src/content.config.ts`        | Astro content collection definition                         |
+| `src/env.d.ts`                 | TypeScript environment type references                      |
+| `src/styles/global.css`        | Brand color tokens for Starlight pages                      |
+
+## `package.json`
+
+### Scripts
+
+| Script      | Command              | Notes                                 |
+| ----------- | -------------------- | ------------------------------------- |
+| `dev`       | `astro dev`          | Starts dev server at `localhost:4321` |
+| `build`     | `astro build`        | Static build to `dist/`               |
+| `preview`   | `astro preview`      | Serves built site locally             |
+| `lint`      | `eslint .`           | Runs ESLint on all supported files    |
+| `format`    | `prettier --write .` | Formats all files in place            |
+| `typecheck` | `tsc --noEmit`       | Type-checks without emitting          |
+| `test`      | `vitest`             | Runs Vitest (no tests exist yet)      |
+
+### Engine constraint
+
+```json
+"engines": { "node": ">=22.21.0" }
+```
+
+Matches the exact version pinned in `.nvmrc`. Requires Node 22 LTS.
+
+### Vite override
+
+```json
+"overrides": {
+  "@tailwindcss/vite": { "vite": "$vite" }
+}
+```
+
+Forces `@tailwindcss/vite` to use the project's top-level `vite` dependency instead of pulling its own copy. Prevents duplicate-Vite bugs where two Vite instances conflict during the build.
+
+### Dependencies
+
+**Runtime:**
+
+| Package                       | Purpose                                         |
+| ----------------------------- | ----------------------------------------------- |
+| `astro`                       | Core framework (static site generator)          |
+| `@astrojs/starlight`          | Documentation site plugin for Astro             |
+| `@astrojs/starlight-tailwind` | Bridges Starlight design tokens to Tailwind     |
+| `starlight-theme-black`       | Dark-first theme with shadcn/ui aesthetic       |
+| `tailwindcss`                 | Utility-first CSS framework (v4)                |
+| `@tailwindcss/vite`           | Tailwind v4 Vite plugin                         |
+| `@fontsource/geist-sans`      | Self-hosted Geist Sans font                     |
+| `@fontsource/geist-mono`      | Self-hosted Geist Mono font                     |
+| `three`                       | Three.js for landing page network visualization |
+
+**Development:**
+
+| Package             | Purpose                                     |
+| ------------------- | ------------------------------------------- |
+| `typescript`        | TypeScript compiler                         |
+| `@types/node`       | Node.js type definitions                    |
+| `@types/three`      | Three.js type definitions                   |
+| `eslint`            | Linter                                      |
+| `@eslint/js`        | ESLint base JS config                       |
+| `typescript-eslint` | TypeScript ESLint integration (flat config) |
+| `prettier`          | Code formatter                              |
+| `vite`              | Build tool (explicit dep for override)      |
+| `vitest`            | Test runner                                 |
+
+## `astro.config.mts`
+
+### Site URL
+
+```typescript
+site: 'https://communitas.xyz';
+```
+
+Used for sitemap generation, canonical URLs, and Open Graph metadata. Requires a DNS CNAME record pointing `communitas.xyz` to GitHub Pages.
+
+### Vite configuration
+
+```typescript
+vite: {
+  plugins: [tailwindcss()],
+  server: {
+    allowedHosts: ['server.tail14a7e5.ts.net'],
+  },
+}
+```
+
+- **Tailwind plugin**: Registers the Tailwind v4 Vite plugin globally. No `tailwind.config.js` needed — Tailwind v4 uses CSS-native configuration via `@theme` directives.
+- **Allowed hosts**: Permits the Tailscale hostname for remote development. Add your own hostname here if accessing the dev server over a non-localhost address.
+
+### Starlight integration
+
+```typescript
+starlight({
+  title: 'Communitas',
+  plugins: [
+    starlightThemeBlack({
+      navLinks: [{ label: 'Home', link: '/' }],
+    }),
+  ],
+  customCss: ['./src/styles/global.css'],
+  sidebar: [
+    /* 8 auto-generated sections */
+  ],
+});
+```
+
+- **Theme**: `starlight-theme-black` overrides 16 Starlight components with a shadcn/ui-inspired dark-first design. The `navLinks` option adds a "Home" link in the Starlight header that returns to the landing page.
+- **Custom CSS**: `src/styles/global.css` provides brand color tokens (indigo accent, zinc grays) that map to Tailwind and Starlight variables.
+- **Sidebar**: Eight sections, all using `autogenerate` from directory names under `src/content/docs/`. Pages are sorted by Starlight's default order (overridable via frontmatter `sidebar.order`).
+
+### Sidebar sections
+
+| Label           | Directory          | Content                       |
+| --------------- | ------------------ | ----------------------------- |
+| Overview        | `overview/`        | Product introduction          |
+| Research        | `research/`        | Research foundations          |
+| Getting Started | `getting-started/` | Pilot guide                   |
+| Models          | `models/`          | Graph, metrics, interventions |
+| Experiments     | `experiments/`     | Experiment registry           |
+| Agents          | `agents/`          | Agent design principles       |
+| Governance      | `governance/`      | Safety and governance         |
+| Internals       | `internals/`       | Architecture, config, ADRs    |
+
+## `tsconfig.json`
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src", "astro.config.*"]
+}
+```
+
+| Option             | Value                 | Rationale                                                  |
+| ------------------ | --------------------- | ---------------------------------------------------------- |
+| `target`           | ES2022                | Matches Node 22 capabilities                               |
+| `moduleResolution` | `bundler`             | Modern resolution for Vite/Astro projects                  |
+| `strict`           | `true`                | Full strict mode per project style guide                   |
+| `noEmit`           | `true`                | Type-checking only; Astro/Vite handle compilation          |
+| `types`            | `vite/client`, `node` | Loads Vite client types (`import.meta.env`) and Node types |
+
+The `src/env.d.ts` file adds Astro's generated types via a triple-slash reference to `.astro/types.d.ts`.
+
+## `eslint.config.mjs`
+
+Uses ESLint 9 flat config format. Combines `@eslint/js` recommended rules with `typescript-eslint` recommended rules.
+
+### Custom rules
+
+| Rule                                | Value    | Notes                    |
+| ----------------------------------- | -------- | ------------------------ |
+| `@typescript-eslint/no-unused-vars` | `warn`   | Allows `_`-prefixed args |
+| `quotes`                            | `single` | Matches Prettier config  |
+| `semi`                              | `always` | Matches Prettier config  |
+
+### Ignored paths
+
+`.astro/`, `dist/`, `node_modules/`, `src/env.d.ts`
+
+### Not covered
+
+ESLint does not lint `.astro` or `.mdx` files. No `eslint-plugin-astro` is installed.
+
+## `.prettierrc`
+
+```json
+{
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false
+}
+```
+
+All values align with the project style guide in `AGENTS.md`. Prettier does not format `.astro` files (no `prettier-plugin-astro` installed).
+
+## `.nvmrc`
+
+```
+22.21.0
+```
+
+Exact Node.js version. Read by `nvm use`, `nvm install`, and the CI workflow (`node-version-file: .nvmrc`).
+
+## `.editorconfig`
+
+- 2-space indentation, spaces (not tabs)
+- LF line endings
+- UTF-8 charset
+- Trailing whitespace trimmed (except in `.md` and `.mdx` where trailing spaces are meaningful for Markdown line breaks)
+
+## `.gitignore`
+
+Excludes: `node_modules/`, `dist/`, `.astro/`, `.vercel/`, `.netlify/`, `.DS_Store`, `coverage/`, `*.log`.
+
+Does not exclude `.env` files. No environment variables are currently used, but `.env*` patterns should be added if secrets are introduced.
+
+## `.github/workflows/deploy.yml`
+
+Triggers on push to `main` and manual dispatch. Two jobs:
+
+1. **Build**: Checks out code, installs Node (from `.nvmrc`), runs `npm ci`, runs `npm run build`, uploads `dist/` as a Pages artifact.
+2. **Deploy**: Deploys the artifact to GitHub Pages using OIDC token authentication.
+
+### Not included in CI
+
+The pipeline does not run `lint`, `typecheck`, or `test`. These checks are developer-responsibility only.
+
+## `src/content.config.ts`
+
+Defines a single `docs` content collection using Starlight's loader and schema:
+
+```typescript
+export const collections = {
+  docs: defineCollection({ loader: docsLoader(), schema: docsSchema() }),
+};
+```
+
+The loader reads `.mdx` files from `src/content/docs/`. The schema validates Starlight frontmatter fields (`title`, `description`, `sidebar`, `template`, etc.).
+
+## `src/styles/global.css`
+
+Loaded by Starlight via `customCss`. Provides:
+
+- **Tailwind v4 imports**: `@astrojs/starlight-tailwind`, `tailwindcss/theme.css`, `tailwindcss/utilities.css`
+- **Accent palette**: Full Tailwind indigo scale (50-950) mapped to `--color-accent-*`
+- **Gray palette**: Full Tailwind zinc scale (50-950) mapped to `--color-gray-*`
+
+These tokens are consumed by both Starlight's built-in styles and the `starlight-theme-black` theme. The landing page (`src/pages/index.astro`) defines its own matching tokens independently.
+
+## Design system rationale
+
+| Choice        | Value                   | Why                                                                 |
+| ------------- | ----------------------- | ------------------------------------------------------------------- |
+| Theme         | `starlight-theme-black` | Dark-first aesthetic for a technical/research audience              |
+| Accent        | Indigo                  | Professional blue-purple tone; trust-oriented                       |
+| Grays         | Zinc                    | Neutral cool grays that pair with indigo                            |
+| Fonts         | Geist Sans + Geist Mono | Vercel's open-source family; high readability for technical content |
+| CSS framework | Tailwind v4             | Utility-first; CSS-native config via `@theme` directives            |
+
+## Dependency map
+
+```
+.nvmrc (22.21.0)
+  +---> package.json (engines.node >= 22.21.0)
+  +---> .github/workflows/deploy.yml (node-version-file)
+
+package.json
+  +---> astro.config.mts (imports from deps)
+  |       +---> src/styles/global.css (customCss)
+  |       +---> src/content.config.ts (content collections)
+  |       +---> public/favicon.svg (favicon)
+  +---> tsconfig.json (types from devDeps)
+  |       +---> src/env.d.ts (.astro/types.d.ts)
+  +---> eslint.config.mjs (imports from devDeps)
+  +---> .prettierrc (used by prettier)
+```

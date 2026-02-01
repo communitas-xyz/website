@@ -1,0 +1,75 @@
+---
+title: 'ADR: Procedural Circle Nodes'
+description: Architecture decision record for switching from halo texture to procedural circle rendering with white outline.
+---
+
+**Date:** 2026-02-01
+**Status:** Accepted
+**Scope:** Network visualization rendering (`src/scripts/network-scene.ts`)
+
+## Context
+
+The Communitas.xyz landing page features a Three.js network graph rendered behind page content — approximately 40 nodes across 3 clusters, 3 bridge nodes, and 8 peripherals, with dynamic spawn/destroy, force-directed physics, and scroll-driven churn.
+
+Nodes previously rendered as `PointsMaterial` with a `CanvasTexture` containing a soft radial gradient (center opacity 1.0 tapering to 0.0 at the edge). This produced a "halo" or "glow" effect — nodes appeared as amorphous blobs with no defined boundary.
+
+The desired visual was a hard-edged filled circle with a **white outline ring**, matching the Linear/Vercel dark-mode aesthetic the project targets.
+
+### Why a texture-only approach failed
+
+`PointsMaterial` with `vertexColors: true` and `AdditiveBlending` multiplies the texture RGB by the vertex color per-fragment. A white ring baked into the texture gets tinted by the vertex color, producing a brighter-same-hue ring rather than a true white outline. Separating fill color from outline color requires shader-level control over the fragment output.
+
+## Decision
+
+Replace the `PointsMaterial` + `CanvasTexture` approach with custom `ShaderMaterial` instances that procedurally draw hard-edged filled circles with a white outline ring using `gl_PointCoord`.
+
+### Shader architecture
+
+Two `ShaderMaterial` variants share the same circle-plus-outline fragment logic:
+
+1. **Vertex-color shader** — for regular and dynamic nodes. Fill color read from `attribute vec4 color` on the geometry (rgb = tint, a = opacity).
+2. **Uniform-color shader** — for bridge and peripheral nodes. Fill color read from `uniform vec3 uColor` multiplied by `uniform float uOpacity`.
+
+The shared fragment logic:
+
+```glsl
+float dist = length(gl_PointCoord - vec2(0.5));
+if (dist > 0.5) discard;                                // outside circle
+float innerR = 0.5 - outlineWidth;
+float ring = smoothstep(innerR - 0.02, innerR, dist);   // AA inner transition
+float outer = 1.0 - smoothstep(0.47, 0.5, dist);        // AA outer edge
+float brightness = max(color.r, max(color.g, color.b));  // outline brightness
+vec3 outlineCol = vec3(brightness * outlineBoost);
+vec3 final = mix(fillColor, outlineCol, ring) * uBrightness;
+gl_FragColor = vec4(final, outer * vAlpha);
+```
+
+The outline color derives from the fill color's max channel value. A blue node gets a bright (near-white) outline; a fading node's outline dims proportionally; dead nodes fade to zero for both fill and outline without a separate alpha channel.
+
+### Parameters
+
+| Node type  | Size (px) | Outline width | Color source                         |
+| ---------- | --------- | ------------- | ------------------------------------ |
+| Regular    | 20        | 0.08          | Vertex color (cluster tint, opacity) |
+| Bridge     | 48        | 0.06          | Uniform indigo                       |
+| Peripheral | 14        | 0.08          | Uniform grey, 0.5 opacity            |
+| Dynamic    | 17        | 0.08          | Vertex color, fades in/out           |
+
+## Consequences
+
+### Positive
+
+- **Visual clarity.** Bounded circles with crisp outlines are more legible than soft glows and communicate discrete entities in a graph.
+- **Design coherence.** Hard-edged nodes align with the dark-mode, minimal aesthetic.
+- **Performance.** Procedural circles avoid texture sampling and CanvasTexture allocation entirely.
+- **Opaque rendering.** With NormalBlending (replacing AdditiveBlending), nodes fully occlude edges beneath them, solving the "see-through node" problem.
+- **Fade simplicity.** Deriving outline brightness from the fill color's max channel means fade-in, fade-out, and death all work through the alpha channel.
+
+### Negative
+
+- **Two shader variants.** Maintaining both a vertex-color and a uniform-color shader adds surface area.
+- **No soft glow option.** The previous halo effect is no longer available without reintroducing a texture pass.
+
+### Neutral
+
+- **Outline color is not independently configurable.** It tracks fill brightness by design. If a future requirement calls for arbitrary outline colors (e.g., selection highlighting), the fragment shader will need an additional uniform.

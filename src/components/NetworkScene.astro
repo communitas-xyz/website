@@ -1,0 +1,60 @@
+---
+/**
+ * NetworkScene — full-viewport Three.js canvas behind the hero.
+ * The reader looks through the text into the network beneath.
+ * Fades on scroll. Parallaxes on mouse. Breathes on its own.
+ */
+---
+
+<div
+  id="network-scene"
+  aria-hidden="true"
+  role="img"
+  aria-label="Animated network graph showing community clusters connected by bridge nodes"
+>
+  <noscript>
+    <picture>
+      <source srcset="/hero-dark.svg" media="(prefers-color-scheme: dark)" />
+      <img src="/hero-light.svg" alt="Community network graph" width="520" height="420" />
+    </picture>
+  </noscript>
+</div>
+
+<script>
+  import { init } from '../scripts/network-scene';
+
+  function setup() {
+    const container = document.getElementById('network-scene');
+    if (!container) return;
+
+    // Hoist to <body> root so the canvas participates in the top-level
+    // stacking context.  Rendered inside .sl-markdown-content by Astro/MDX,
+    // but position:fixed needs to sit *below* all page chrome (z-index: 0)
+    // while the rest of the page is z-index: 1+.  Staying inside the
+    // markdown wrapper traps the canvas in that parent's stacking context.
+    if (container.parentElement !== document.body) {
+      document.body.prepend(container);
+    }
+
+    // Don't re-init if already has a canvas
+    if (container.querySelector('canvas')) return;
+
+    // Lazy: only init when visible
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          init(container);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.05 },
+    );
+    observer.observe(container);
+  }
+
+  // Run on load
+  setup();
+
+  // Re-run after view transitions (if using Astro transitions)
+  document.addEventListener('astro:after-swap', setup);
+</script>

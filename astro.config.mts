@@ -1,18 +1,29 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import starlightThemeBlack from 'starlight-theme-black';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   site: 'https://communitas.xyz',
+  vite: {
+    plugins: [tailwindcss()],
+    server: {
+      allowedHosts: ['server.tail14a7e5.ts.net', 'server'],
+    },
+  },
   integrations: [
     starlight({
       title: 'Communitas',
       description:
         'Building better communities. Tools, research, and guidance for intentional community design.',
       favicon: '/favicon.svg',
-      social: [
-        { icon: 'github', label: 'GitHub', href: 'https://github.com/communitas-xyz' },
+      plugins: [
+        starlightThemeBlack({
+          navLinks: [{ label: 'Home', link: '/' }],
+        }),
       ],
-      customCss: ['./src/styles/custom.css'],
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/communitas-xyz' }],
+      customCss: ['./src/styles/global.css'],
       sidebar: [
         {
           label: 'Overview',
@@ -41,6 +52,10 @@ export default defineConfig({
         {
           label: 'Governance',
           autogenerate: { directory: 'governance' },
+        },
+        {
+          label: 'Internals',
+          autogenerate: { directory: 'internals' },
         },
       ],
     }),

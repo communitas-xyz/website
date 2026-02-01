@@ -31,18 +31,19 @@ This repository now contains an Astro + Starlight docs site plus TypeScript tool
    - `npm run typecheck` – run TypeScript type-checking with `tsc --noEmit`.
    - `npm test` – run the Vitest test suite (once tests exist).
 
-5. Content and site structure
+3. Content and site structure
    - Content lives in `src/content/docs/` as `.mdx` files (Starlight convention).
    - Content config is at `src/content.config.ts` (Astro 5 + Starlight loaders).
-   - Custom CSS theme is at `src/styles/custom.css`, registered via `customCss` in `astro.config.mts`.
+   - Custom CSS theme is at `src/styles/global.css`, registered via `customCss` in `astro.config.mts`.
+   - The landing page (`src/pages/index.astro`) is a standalone Astro page outside Starlight, with its own styles.
    - Static assets (favicon, images) go in `public/`.
    - Deployment: GitHub Actions workflow at `.github/workflows/deploy.yml` builds and deploys to GitHub Pages on push to `main`.
 
-3. Single-test patterns (Vitest; once tests exist)
+4. Single-test patterns (Vitest; once tests exist)
    - Single file: `npx vitest path/to/file.test.ts`.
    - By test name: `npx vitest -t "test name"`.
 
-4. E2E and other stacks (planned)
+5. E2E and other stacks (planned)
    - If you add Playwright or Cypress for e2e:
      - Single spec: `npx playwright test path/to/spec.ts` or `npx cypress run --spec path/to/spec.cy.ts`.
    - If you add a Python component, prefer `uv` or `pip` + `pytest`; use `pytest path/to/test_file.py -k name_substring` for single tests.

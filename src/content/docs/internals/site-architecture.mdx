@@ -1,0 +1,136 @@
+---
+title: Site Architecture
+description: How the Communitas website is structured — a standalone landing page and Starlight documentation as two separate worlds.
+---
+
+## Two rendering paths
+
+The Communitas website uses a split architecture. The landing page and the documentation are rendered by different systems, each doing what it does best.
+
+| Route                              | Rendered by              | Source                      |
+| ---------------------------------- | ------------------------ | --------------------------- |
+| `/`                                | Astro file-based routing | `src/pages/index.astro`     |
+| `/overview/*`, `/research/*`, etc. | Starlight integration    | `src/content/docs/**/*.mdx` |
+
+The landing page is a standalone Astro page with full creative control over layout, DOM structure, and styling. The documentation pages are rendered by Starlight with its sidebar, search, and theme system.
+
+Both share the same Astro build pipeline and deploy as a single static site.
+
+## Why the split
+
+The landing page and documentation have fundamentally different jobs.
+
+A **landing page** needs full creative control: custom sections, visual hierarchy, call-to-action buttons, and a Three.js network visualization. Trying to build this inside Starlight's content pipeline means fighting the framework — the DOM structure is dictated by the theme, stacking contexts trap positioned elements, and markdown rendering constrains layout options.
+
+A **documentation site** needs structured navigation, full-text search, consistent page layouts, and a sidebar. Starlight handles all of this out of the box.
+
+Splitting them means each system does what it's designed for. The landing page owns its DOM. Starlight owns the docs.
+
+## Landing page (`src/pages/index.astro`)
+
+The landing page is a single Astro component that renders the entire page — `<html>` through `</html>`. It does not use Starlight's layout, theme, or component system.
+
+### What it includes
+
+- **Three.js canvas**: A `<div id="network-scene">` placed as a direct child of `<body>` at `z-index: 0`. The page wrapper sits above it at `z-index: 1`. This solves the stacking context problem that plagued the previous approach (see [ADR: Procedural Circle Nodes](/internals/adr-procedural-circles/) for related history).
+- **Theme persistence**: Reads the same `localStorage` key (`starlight-theme`) as the Starlight theme, so dark/light preference carries between the landing page and docs.
+- **Design tokens**: Defines its own CSS custom properties (`--background`, `--foreground`, `--accent`, etc.) matching the values from `starlight-theme-black`. The fonts (Geist Sans, Geist Mono) are imported directly from `@fontsource`.
+- **Navigation**: A sticky nav bar with "Docs" and "GitHub" links. The "Docs" link points to `/overview/what-is-communitas/`.
+
+### What it does not include
+
+- No Starlight sidebar, search, or page chrome
+- No Tailwind utilities (styles are scoped CSS in the component)
+- No content collections or MDX rendering
+
+## Documentation (`src/content/docs/`)
+
+All documentation pages are `.mdx` files in `src/content/docs/`, organized into subdirectories that map to sidebar sections. Starlight auto-generates the sidebar from the directory structure.
+
+### Theme
+
+The docs use `starlight-theme-black`, a community theme that overrides 16 Starlight components with a shadcn/ui-inspired design. It provides:
+
+- Dark-first color scheme using OKLCH color space
+- Geist Sans and Geist Mono fonts
+- Sticky header with backdrop blur
+- Responsive sidebar (sticky on desktop, drawer on mobile)
+
+The theme is configured in `astro.config.mts` with a `navLinks` option that adds a "Home" link back to the landing page.
+
+### Custom CSS
+
+`src/styles/global.css` is loaded by Starlight via the `customCss` config. It provides brand color tokens (indigo accent, zinc grays) using Tailwind v4's `@theme` directive. These tokens map to both Starlight's `--sl-color-*` variables and Tailwind's utility classes.
+
+## Navigation between the two worlds
+
+Users move between the landing page and docs via explicit links:
+
+| From         | To           | Link                                            |
+| ------------ | ------------ | ----------------------------------------------- |
+| Landing page | Docs         | "Docs" in the nav bar, section links in content |
+| Docs         | Landing page | "Home" in the Starlight header (via `navLinks`) |
+
+There is no shared navigation component. Each world has its own nav that links to the other.
+
+## File structure
+
+```
+src/
+  pages/
+    index.astro              # Landing page (standalone)
+  content/
+    docs/
+      overview/              # Product introduction
+      research/              # Research foundations
+      getting-started/       # Pilot guide
+      models/                # Graph, metrics, interventions
+      experiments/           # Experiment registry
+      agents/                # Agent design principles
+      governance/            # Safety and governance
+      internals/             # Architecture, config, ADRs
+    content.config.ts        # Content collection definition
+  components/
+    NetworkScene.astro       # Three.js canvas component (legacy, used by old splash page)
+  scripts/
+    network-scene.ts         # Three.js visualization (~1,200 lines)
+  styles/
+    global.css               # Starlight brand tokens
+  assets/
+    hero-dark.svg            # Static SVG fallbacks
+    hero-light.svg
+public/
+  favicon.svg                # Network graph icon
+```
+
+## Build output
+
+`npm run build` produces a single `dist/` directory containing:
+
+- `/index.html` — landing page (from `src/pages/index.astro`)
+- `/overview/what-is-communitas/index.html` — docs pages (from Starlight)
+- `/_astro/` — bundled CSS, JS, and fonts
+- `/pagefind/` — search index (generated by Starlight)
+- `/sitemap-index.xml` — sitemap (generated by `@astrojs/sitemap`)
+
+The entire site deploys as static files to GitHub Pages via the CI workflow in `.github/workflows/deploy.yml`.
+
+## Trade-offs
+
+### Benefits of the split
+
+- Full creative control over the landing page DOM and styling
+- No z-index or stacking context conflicts with the Three.js canvas
+- Starlight handles docs navigation, search, and theming without customization
+- Each system can evolve independently
+
+### Costs of the split
+
+- Two sets of design tokens to maintain (landing page CSS + `global.css`)
+- Two navigation bars with no shared component
+- Theme preference must be synchronized via `localStorage`
+- The landing page does not benefit from Starlight's search index
+
+### Future considerations
+
+If the landing page grows to multiple pages (e.g., `/pricing`, `/about`), consider extracting a shared layout component. If the design tokens drift, consider a shared CSS file imported by both the landing page and Starlight's `customCss`.

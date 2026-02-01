@@ -1,0 +1,380 @@
+---
+title: Network Visualization System
+description: Technical reference for the Three.js network graph animation on the landing page.
+---
+
+**Source file:** `src/scripts/network-scene.ts` (~1,200 lines)
+**Astro component:** `src/components/NetworkScene.astro`
+**Landing page:** `src/content/docs/index.mdx`
+**Stack:** Astro 5.17 + Starlight 0.37, Three.js (core + fat-line addons)
+
+---
+
+## 1. Initialization
+
+The Astro component `NetworkScene.astro` provides a `<div id="network-scene">` container with `aria-hidden="true"` and a `<noscript>` fallback (static SVG). A `<script>` block imports `init` from `network-scene.ts` and wires up lazy initialization:
+
+1. An `IntersectionObserver` (threshold 0.05) watches the container.
+2. When the container enters the viewport, `init(container)` runs and the observer disconnects.
+3. A guard prevents re-initialization if a `<canvas>` already exists.
+4. The `astro:after-swap` event re-runs setup to support Astro view transitions.
+
+### `init(container)` sequence
+
+| Step | Action                                                                                      |
+| ---- | ------------------------------------------------------------------------------------------- |
+| 1    | Create seeded PRNG (seed `42`)                                                              |
+| 2    | `buildGraph(rand)` — construct initial graph (~44 nodes, ~60+ edges)                        |
+| 3    | Read current palette from DOM theme attribute                                               |
+| 4    | Check `prefers-reduced-motion` media query                                                  |
+| 5    | Create `<canvas>`, append to container                                                      |
+| 6    | Create `WebGLRenderer` (antialias, alpha, pixel ratio capped at 2, clear color transparent) |
+| 7    | Create `PerspectiveCamera` (FOV 32deg, near 1, far 1200, position z=500)                    |
+| 8    | Create `Scene`                                                                              |
+| 9    | Classify initial nodes by type; build GPU objects (see section 5)                           |
+| 10   | Register `ResizeObserver` on container                                                      |
+| 11   | Register `mousemove` listener on `window`                                                   |
+| 12   | Call `syncPositions()` + `renderer.render()` for first frame                                |
+| 13   | If `prefers-reduced-motion` is true, return (no animation loop)                             |
+| 14   | Start `requestAnimationFrame` loop                                                          |
+| 15   | Create `MutationObserver` for theme changes                                                 |
+| 16   | Return cleanup function                                                                     |
+
+---
+
+## 2. Graph Data Model
+
+### LiveNode
+
+```typescript
+interface LiveNode {
+  x: number; // world-space X position
+  y: number; // world-space Y position
+  z: number; // world-space Z position
+  vx: number; // X velocity
+  vy: number; // Y velocity
+  kind: 'regular' | 'hub' | 'bridge' | 'peripheral';
+  cluster: number; // 0-2 for clustered nodes, -1 for bridge/peripheral
+  size: number; // visual size hint (unused by current shader)
+  baseOpacity: number; // 0-1 base brightness
+  alive: boolean; // false = fully dead
+  age: number; // seconds since creation (initial nodes start at 10)
+  fadeIn: number; // seconds for fade-in
+  dying: boolean; // true = in death fade
+  deathAge: number; // age when dying started
+  fadeOut: number; // seconds for death fade
+  bufIdx: number; // index into the GPU buffer for this node's visual type
+}
+```
+
+### LiveEdge
+
+```typescript
+interface LiveEdge {
+  a: number; // source node index
+  b: number; // target node index
+  alive: boolean;
+  age: number; // seconds since creation
+  fadeIn: number; // seconds for fade-in
+  dying: boolean; // true = in death fade
+  deathAge: number; // age when dying started
+  fadeOut: number; // seconds for death fade
+  bufIdx: number; // index into the edge visual buffer
+  maxAge: number; // Infinity = permanent, finite = auto-sever
+  highlight: number; // seconds of bright highlight color on creation
+}
+```
+
+### GraphState
+
+```typescript
+interface GraphState {
+  nodes: LiveNode[];
+  edges: LiveEdge[];
+  adj: number[][]; // adjacency list (bidirectional)
+  clusterCount: number; // always 3
+  clusterDrift: { dx: number; dy: number }[]; // per-cluster drift vectors
+  clusterCenters: { x: number; y: number }[]; // live cluster centroids
+}
+```
+
+---
+
+## 3. Graph Construction
+
+### Cluster definitions
+
+| Cluster | Center (x, y, z) | Node count | Spread |
+| ------- | ---------------- | ---------- | ------ |
+| 0       | (-150, 90, -8)   | 11         | 60     |
+| 1       | (140, 50, 6)     | 11         | 58     |
+| 2       | (-30, -110, -4)  | 10         | 52     |
+
+Each cluster contains one **hub** node at the center and satellites positioned at random angles and distances (35-100% of spread radius).
+
+### Bridge nodes (3 total)
+
+| Bridge | Position        | Connects clusters |
+| ------ | --------------- | ----------------- |
+| 0      | (-5, 78, 22)    | 0 and 1           |
+| 1      | (75, -35, 28)   | 1 and 2           |
+| 2      | (-115, -10, 18) | 0 and 2           |
+
+Each bridge connects to the 2-3 nearest nodes in each of its paired clusters. All three bridges are connected to each other.
+
+### Peripheral nodes (8 total)
+
+Hardcoded positions at the graph's outer edges. No edges. `baseOpacity: 0.4`.
+
+### Edge construction
+
+| Edge type         | Rule                                          | Probability       |
+| ----------------- | --------------------------------------------- | ----------------- |
+| Hub spokes        | Hub to each satellite                         | 55% per satellite |
+| Ring connections  | Satellite[i] to Satellite[i+1]                | 65% per pair      |
+| Random chords     | Satellite[i] to Satellite[j] (j >= i+2)       | 10% per pair      |
+| Bridge to cluster | Bridge to 3 nearest in each connected cluster | 100%              |
+| Inter-bridge      | All 3 bridges fully connected                 | 100%              |
+
+All initial edges have `maxAge: Infinity` (permanent) and `age: 10` (pre-aged to skip fade-in).
+
+---
+
+## 4. Physics Engine
+
+Edge-based force-directed layout. Three forces per clustered node:
+
+### Edge attraction (PRIMARY, `EDGE_ATTRACT = 1.5`)
+
+Each node is pulled toward the average position of its live connected neighbors (computed from `G.adj`). This is the force that makes topology shape layout.
+
+When a cross-cluster edge is added, the neighbor centroid shifts toward the distant node, pulling the local node. Its neighbors follow because their centroids update next frame. Cascading propagation emerges naturally. When the edge severs, the distant node drops out of the centroid calculation and remaining same-cluster neighbors pull the node back home.
+
+### Cluster gravity (WEAK, `CLUSTER_ATTRACT = 0.5`)
+
+Gentle pull toward cluster centroid. Prevents scatter when a node has few or no edges.
+
+### Drift
+
+Per-cluster random direction vector (30 u/s magnitude). Rotates randomly every 5 seconds. Gives macro movement to the whole scene.
+
+### Integration
+
+```
+vx += (drift.dx + edgeFx + clusterFx) * dt
+vy += (drift.dy + edgeFy + clusterFy) * dt
+vx *= DAMPING   // 0.88
+vy *= DAMPING
+x += vx * dt
+y += vy * dt
+```
+
+Bridge and peripheral nodes only get edge attraction at 0.3x strength + gentler damping (0.98).
+
+---
+
+## 5. Rendering Architecture
+
+All rendering uses **separate GPU objects per visual type**. A single combined `Points` object with `drawRange` caused black screens in earlier iterations.
+
+### Node objects (4 Points, all renderOrder: 1)
+
+| Object      | Material                     | Size | Color source            | Blending |
+| ----------- | ---------------------------- | ---- | ----------------------- | -------- |
+| `regPoints` | Vertex-color ShaderMaterial  | 20   | vec4 attribute (RGBA)   | Normal   |
+| `bPoints`   | Uniform-color ShaderMaterial | 48   | uColor uniform (indigo) | Normal   |
+| `pPoints`   | Uniform-color ShaderMaterial | 14   | uColor uniform (grey)   | Normal   |
+| `dynPoints` | Vertex-color ShaderMaterial  | 17   | vec4 attribute (RGBA)   | Normal   |
+
+### Node shader
+
+Custom GLSL `ShaderMaterial` using `gl_PointCoord` to draw procedural hard-edged circles with white outline. Two vertex shader variants feed a shared fragment shader:
+
+- **Vertex-color variant**: reads `attribute vec4 color` (rgb=tint, a=opacity). For regular + dynamic nodes.
+- **Uniform-color variant**: reads `uniform vec3 uColor` + `uniform float uOpacity`. For bridge + peripheral nodes.
+
+**Fragment shader logic:**
+
+1. `dist > 0.5` — discard (outside circle)
+2. `smoothstep(0.47, 0.5, dist)` — anti-aliased outer edge
+3. `smoothstep(innerR - 0.02, innerR, dist)` — outline ring transition
+4. Outline color = `min(1.0, max(r,g,b) * uOutlineBoost)` (brightness-derived)
+5. `mix(fill, outline, ring) * uBrightness` — final color
+6. Output `vec4(col, outer * vAlpha)` — proper alpha for opacity
+
+Nodes use NormalBlending + depthTest: false + renderOrder: 1 so they render as fully opaque circles on top of edges.
+
+### Edge objects (3 LineSegments2, all renderOrder: 0)
+
+| Object        | Material                     | Line width | Opacity |
+| ------------- | ---------------------------- | ---------- | ------- |
+| Regular edges | LineMaterial (uniform color) | 2px        | 0.20    |
+| Bridge edges  | LineMaterial (uniform color) | 3px        | 0.35    |
+| Dynamic edges | LineMaterial (vertex colors) | 2px        | varies  |
+
+`LineSegments2` from Three.js addons renders each line segment as a screen-space quad. Works on all platforms (WebGL's native lineWidth is capped at 1px). `LineMaterial` requires viewport resolution set on resize.
+
+### Dynamic edge highlight
+
+New edges start with a bright highlight color (white in dark mode) and lerp to normal edge color over the highlight duration (1.5-2.0s).
+
+---
+
+## 6. Lifecycle Systems
+
+### Node spawn (every 0.8s base, scroll-accelerated)
+
+- Pick cluster (smaller clusters weighted higher)
+- Spawn at random angle/distance from cluster center
+- Connect to 2-4 nearest same-cluster nodes
+- Fade in over 0.4-0.8s
+- Max 150 dynamic nodes
+
+### Node death (every 1.2s base, scroll-accelerated)
+
+- Pick from oldest regular nodes (random from top 8)
+- Mark dying, fade out over 0.6-1.0s
+- All connected edges also begin dying
+- On death: clean G.adj (remove from all neighbor lists)
+- Min population guard: skip if 5 or fewer candidates
+
+### Cross-cluster random edges (every 2.5s base, scroll-accelerated)
+
+- Pick two alive nodes from different clusters
+- Create edge with maxAge = 6-14s, highlight = 2.0s
+- Edge-based physics immediately pulls both endpoints together
+- Their neighborhoods follow via cascading neighbor-centroid shifts
+- On maxAge: edge auto-severs, adjacency cleaned, nodes drift back
+- Max 400 dynamic edges
+
+### Adjacency cleanup
+
+When edges die or nodes die, entries are removed from `G.adj`. This is critical for edge-based physics — without cleanup, dead connections would still exert phantom attraction forces.
+
+---
+
+## 7. Scroll and Mouse Interaction
+
+### Scroll
+
+```
+scrollFraction = scrollY / (2 * viewportHeight), clamped 0-1
+```
+
+| Effect            | Formula                   | Range      |
+| ----------------- | ------------------------- | ---------- |
+| Container opacity | 1 - scrollFraction \* 0.3 | 1.0 to 0.7 |
+| Churn multiplier  | 1 + scrollFraction \* 10  | 1x to 11x  |
+
+The churn multiplier accelerates all three lifecycle timers equally.
+
+### Mouse parallax
+
+Camera x/y follows cursor position (plus/minus 30/22 units), smoothed with 0.04 lerp factor. Camera always looks at origin.
+
+---
+
+## 8. Theme Reactivity
+
+MutationObserver on `document.documentElement` watches the `data-theme` attribute.
+
+### Palette colors
+
+| Color          | Dark mode | Light mode |
+| -------------- | --------- | ---------- |
+| Cluster 0      | `#aabbee` | `#4466aa`  |
+| Cluster 1      | `#ccaaee` | `#7744aa`  |
+| Cluster 2      | `#88ddcc` | `#228877`  |
+| Bridge         | `#a5b4fc` | `#6366f1`  |
+| Edge           | `#d4d4d8` | `#71717a`  |
+| Edge highlight | `#ffffff` | `#e0e7ff`  |
+| Peripheral     | `#a1a1aa` | `#a1a1aa`  |
+
+On theme change: rebuilds palette, updates uniform colors, rewrites vertex color buffers, updates edge materials.
+
+---
+
+## 9. Accessibility
+
+- Container has `aria-hidden="true"` — screen readers skip the visualization
+- `<noscript>` block provides static SVG fallback
+- `prefers-reduced-motion: reduce` renders a single static frame, no animation loop
+
+---
+
+## 10. Animation Loop
+
+### Frame timing
+
+dt is capped at 100ms to prevent physics explosions after tab backgrounding.
+
+### Per-frame execution order
+
+| Order | Operation                                      |
+| ----- | ---------------------------------------------- |
+| 1     | Compute scroll fraction and churn multiplier   |
+| 2     | Set container opacity                          |
+| 3     | Update mouse parallax                          |
+| 4     | Age all alive nodes and edges                  |
+| 5     | Check edge lifespans (auto-sever expired)      |
+| 6     | Run physics (stepPhysics)                      |
+| 7     | Spawn nodes if interval exceeded               |
+| 8     | Kill nodes if interval exceeded                |
+| 9     | Spawn cross-cluster edges if interval exceeded |
+| 10    | Sync all positions/colors to GPU               |
+| 11    | Render                                         |
+
+---
+
+## 11. Constants Reference
+
+| Constant                | Value  | Purpose                               |
+| ----------------------- | ------ | ------------------------------------- |
+| PRNG seed               | 42     | Deterministic initial layout          |
+| Camera Z                | 500    | Distance from scene                   |
+| Camera FOV              | 32deg  | Narrow FOV for less distortion        |
+| EDGE_ATTRACT            | 1.5    | Primary force strength                |
+| CLUSTER_ATTRACT         | 0.5    | Background gravity                    |
+| DAMPING                 | 0.88   | Velocity decay per frame              |
+| Drift speed             | 30 u/s | Per-cluster drift magnitude           |
+| Drift rotation interval | 5s     | How often drift direction changes     |
+| Spawn interval          | 0.8s   | Base time between node spawns         |
+| Destroy interval        | 1.2s   | Base time between node kills          |
+| Random edge interval    | 2.5s   | Base time between cross-cluster edges |
+| Cross-edge lifespan     | 6-14s  | Before auto-sever                     |
+| Max dynamic nodes       | 150    | Pre-allocated buffer size             |
+| Max dynamic edges       | 400    | Pre-allocated buffer size             |
+| Scroll churn multiplier | 10x    | Max churn acceleration                |
+| uBrightness             | 0.85   | Global node brightness multiplier     |
+| uOutlineWidth           | 0.08   | Outline ring width (0.06 for bridge)  |
+| uOutlineBoost           | 1.4    | Outline brightness multiplier         |
+| Node size (regular)     | 20     | Point sprite size                     |
+| Node size (bridge)      | 48     | Larger for visual prominence          |
+| Node size (peripheral)  | 14     | Smaller, dimmer                       |
+| Node size (dynamic)     | 17     | Spawned nodes                         |
+| Edge width (regular)    | 2px    | Screen-space line width               |
+| Edge width (bridge)     | 3px    | Thicker for bridge connections        |
+
+---
+
+## 12. Dependencies
+
+| Package                                            | Usage                                                                           |
+| -------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `three` (core)                                     | Scene, Camera, Renderer, BufferGeometry, Points, ShaderMaterial, Color, Vector2 |
+| `three/examples/jsm/lines/LineSegments2.js`        | Fat line segment rendering                                                      |
+| `three/examples/jsm/lines/LineSegmentsGeometry.js` | Geometry for fat lines                                                          |
+| `three/examples/jsm/lines/LineMaterial.js`         | Material for screen-space line width                                            |
+
+No other runtime dependencies. The file is a self-contained module.
+
+---
+
+## 13. Architectural Decisions
+
+1. **Separate Points per type**: A single combined Points with drawRange produced black screens. Each node type gets its own Points object.
+2. **Seeded PRNG**: Seed 42 ensures identical initial graph on every page load.
+3. **RGBA vertex colors**: RGB + Alpha stored separately (4-component attribute) allows NormalBlending with proper opacity for opaque node circles.
+4. **NormalBlending + renderOrder**: Nodes at renderOrder 1 fully occlude edges at renderOrder 0.
+5. **Procedural circles**: No texture needed. Fragment shader draws circles using `gl_PointCoord`.
+6. **Adjacency cleanup**: Dead edges/nodes are removed from `G.adj` to prevent phantom physics forces.

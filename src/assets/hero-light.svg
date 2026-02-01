@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 420" fill="none">
+  <style>
+    .bridge-node { animation: pulse 3s ease-in-out infinite; }
+    .bridge-node:nth-child(2) { animation-delay: 1s; }
+    .bridge-node:nth-child(3) { animation-delay: 2s; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .flow-edge { animation: flow 4s ease-in-out infinite; }
+    .flow-edge:nth-child(2n) { animation-delay: 2s; }
+    @keyframes flow {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.55; }
+    }
+  </style>
+
+  <defs>
+    <filter id="glow-l">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft-l">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- ================ EDGES: Cluster 1 (upper-left) ================ -->
+  <g stroke="#27272a" stroke-width="0.8" stroke-linecap="round">
+    <line x1="78" y1="68" x2="104" y2="55" opacity="0.1"/>
+    <line x1="104" y1="55" x2="136" y2="60" opacity="0.12"/>
+    <line x1="136" y1="60" x2="158" y2="80" opacity="0.09"/>
+    <line x1="158" y1="80" x2="155" y2="110" opacity="0.1"/>
+    <line x1="155" y1="110" x2="135" y2="130" opacity="0.12"/>
+    <line x1="135" y1="130" x2="105" y2="136" opacity="0.09"/>
+    <line x1="105" y1="136" x2="80" y2="120" opacity="0.1"/>
+    <line x1="80" y1="120" x2="68" y2="95" opacity="0.12"/>
+    <line x1="68" y1="95" x2="78" y2="68" opacity="0.09"/>
+    <line x1="115" y1="94" x2="78" y2="68" opacity="0.14"/>
+    <line x1="115" y1="94" x2="136" y2="60" opacity="0.14"/>
+    <line x1="115" y1="94" x2="155" y2="110" opacity="0.14"/>
+    <line x1="115" y1="94" x2="105" y2="136" opacity="0.14"/>
+    <line x1="115" y1="94" x2="68" y2="95" opacity="0.14"/>
+    <line x1="104" y1="55" x2="158" y2="80" opacity="0.07"/>
+    <line x1="135" y1="130" x2="80" y2="120" opacity="0.07"/>
+    <line x1="78" y1="68" x2="135" y2="130" opacity="0.06"/>
+  </g>
+
+  <!-- ================ EDGES: Cluster 2 (right) ================ -->
+  <g stroke="#27272a" stroke-width="0.8" stroke-linecap="round">
+    <line x1="355" y1="120" x2="382" y2="108" opacity="0.1"/>
+    <line x1="382" y1="108" x2="412" y2="114" opacity="0.12"/>
+    <line x1="412" y1="114" x2="436" y2="132" opacity="0.09"/>
+    <line x1="436" y1="132" x2="442" y2="158" opacity="0.1"/>
+    <line x1="442" y1="158" x2="432" y2="184" opacity="0.12"/>
+    <line x1="432" y1="184" x2="406" y2="194" opacity="0.09"/>
+    <line x1="406" y1="194" x2="378" y2="188" opacity="0.1"/>
+    <line x1="378" y1="188" x2="355" y2="170" opacity="0.12"/>
+    <line x1="355" y1="170" x2="355" y2="120" opacity="0.09"/>
+    <line x1="395" y1="150" x2="355" y2="120" opacity="0.14"/>
+    <line x1="395" y1="150" x2="412" y2="114" opacity="0.14"/>
+    <line x1="395" y1="150" x2="442" y2="158" opacity="0.14"/>
+    <line x1="395" y1="150" x2="406" y2="194" opacity="0.14"/>
+    <line x1="395" y1="150" x2="355" y2="170" opacity="0.14"/>
+    <line x1="382" y1="108" x2="436" y2="132" opacity="0.07"/>
+    <line x1="432" y1="184" x2="378" y2="188" opacity="0.07"/>
+    <line x1="355" y1="120" x2="406" y2="194" opacity="0.06"/>
+  </g>
+
+  <!-- ================ EDGES: Cluster 3 (bottom) ================ -->
+  <g stroke="#27272a" stroke-width="0.8" stroke-linecap="round">
+    <line x1="162" y1="295" x2="188" y2="285" opacity="0.1"/>
+    <line x1="188" y1="285" x2="218" y2="292" opacity="0.12"/>
+    <line x1="218" y1="292" x2="238" y2="314" opacity="0.09"/>
+    <line x1="238" y1="314" x2="230" y2="340" opacity="0.1"/>
+    <line x1="230" y1="340" x2="205" y2="352" opacity="0.12"/>
+    <line x1="205" y1="352" x2="178" y2="348" opacity="0.09"/>
+    <line x1="178" y1="348" x2="155" y2="328" opacity="0.1"/>
+    <line x1="155" y1="328" x2="162" y2="295" opacity="0.12"/>
+    <line x1="198" y1="318" x2="162" y2="295" opacity="0.14"/>
+    <line x1="198" y1="318" x2="218" y2="292" opacity="0.14"/>
+    <line x1="198" y1="318" x2="230" y2="340" opacity="0.14"/>
+    <line x1="198" y1="318" x2="178" y2="348" opacity="0.14"/>
+    <line x1="188" y1="285" x2="238" y2="314" opacity="0.07"/>
+    <line x1="205" y1="352" x2="155" y2="328" opacity="0.07"/>
+  </g>
+
+  <!-- ================ BRIDGE EDGES (indigo, animated) ================ -->
+  <g stroke="#4f46e5" stroke-width="1.2" stroke-linecap="round" class="flow-edge">
+    <line x1="245" y1="115" x2="158" y2="80" opacity="0.35"/>
+    <line x1="245" y1="115" x2="155" y2="110" opacity="0.3"/>
+    <line x1="245" y1="115" x2="115" y2="94" opacity="0.25"/>
+    <line x1="245" y1="115" x2="355" y2="120" opacity="0.35"/>
+    <line x1="245" y1="115" x2="382" y2="108" opacity="0.3"/>
+    <line x1="245" y1="115" x2="395" y2="150" opacity="0.25"/>
+    <line x1="325" y1="255" x2="432" y2="184" opacity="0.35"/>
+    <line x1="325" y1="255" x2="406" y2="194" opacity="0.3"/>
+    <line x1="325" y1="255" x2="395" y2="150" opacity="0.25"/>
+    <line x1="325" y1="255" x2="238" y2="314" opacity="0.35"/>
+    <line x1="325" y1="255" x2="218" y2="292" opacity="0.3"/>
+    <line x1="325" y1="255" x2="198" y2="318" opacity="0.25"/>
+    <line x1="132" y1="215" x2="80" y2="120" opacity="0.35"/>
+    <line x1="132" y1="215" x2="68" y2="95" opacity="0.3"/>
+    <line x1="132" y1="215" x2="115" y2="94" opacity="0.25"/>
+    <line x1="132" y1="215" x2="155" y2="328" opacity="0.35"/>
+    <line x1="132" y1="215" x2="162" y2="295" opacity="0.3"/>
+    <line x1="132" y1="215" x2="198" y2="318" opacity="0.25"/>
+    <line x1="245" y1="115" x2="325" y2="255" opacity="0.1" stroke-dasharray="4 6"/>
+    <line x1="325" y1="255" x2="132" y2="215" opacity="0.1" stroke-dasharray="4 6"/>
+    <line x1="132" y1="215" x2="245" y2="115" opacity="0.1" stroke-dasharray="4 6"/>
+  </g>
+
+  <!-- ================ NODES: Cluster 1 ================ -->
+  <g fill="#27272a">
+    <circle cx="78"  cy="68"  r="3"   opacity="0.45"/>
+    <circle cx="104" cy="55"  r="3"   opacity="0.5"/>
+    <circle cx="136" cy="60"  r="3"   opacity="0.4"/>
+    <circle cx="158" cy="80"  r="3.5" opacity="0.55"/>
+    <circle cx="155" cy="110" r="3"   opacity="0.5"/>
+    <circle cx="135" cy="130" r="3"   opacity="0.4"/>
+    <circle cx="105" cy="136" r="3"   opacity="0.45"/>
+    <circle cx="80"  cy="120" r="3.5" opacity="0.55"/>
+    <circle cx="68"  cy="95"  r="3"   opacity="0.45"/>
+    <circle cx="115" cy="94"  r="4.5" opacity="0.7" filter="url(#soft-l)"/>
+  </g>
+
+  <!-- ================ NODES: Cluster 2 ================ -->
+  <g fill="#27272a">
+    <circle cx="355" cy="120" r="3"   opacity="0.45"/>
+    <circle cx="382" cy="108" r="3"   opacity="0.5"/>
+    <circle cx="412" cy="114" r="3.5" opacity="0.55"/>
+    <circle cx="436" cy="132" r="3"   opacity="0.4"/>
+    <circle cx="442" cy="158" r="3"   opacity="0.5"/>
+    <circle cx="432" cy="184" r="3.5" opacity="0.55"/>
+    <circle cx="406" cy="194" r="3"   opacity="0.45"/>
+    <circle cx="378" cy="188" r="3"   opacity="0.4"/>
+    <circle cx="355" cy="170" r="3"   opacity="0.45"/>
+    <circle cx="395" cy="150" r="4.5" opacity="0.7" filter="url(#soft-l)"/>
+  </g>
+
+  <!-- ================ NODES: Cluster 3 ================ -->
+  <g fill="#27272a">
+    <circle cx="162" cy="295" r="3"   opacity="0.45"/>
+    <circle cx="188" cy="285" r="3"   opacity="0.5"/>
+    <circle cx="218" cy="292" r="3.5" opacity="0.55"/>
+    <circle cx="238" cy="314" r="3"   opacity="0.4"/>
+    <circle cx="230" cy="340" r="3"   opacity="0.5"/>
+    <circle cx="205" cy="352" r="3"   opacity="0.45"/>
+    <circle cx="178" cy="348" r="3"   opacity="0.4"/>
+    <circle cx="155" cy="328" r="3.5" opacity="0.55"/>
+    <circle cx="198" cy="318" r="4.5" opacity="0.7" filter="url(#soft-l)"/>
+  </g>
+
+  <!-- ================ BRIDGE NODES (indigo, glowing) ================ -->
+  <g filter="url(#glow-l)">
+    <circle class="bridge-node" cx="245" cy="115" r="6" fill="#4f46e5" opacity="0.85"/>
+    <circle class="bridge-node" cx="325" cy="255" r="6" fill="#4f46e5" opacity="0.85"/>
+    <circle class="bridge-node" cx="132" cy="215" r="6" fill="#4f46e5" opacity="0.85"/>
+  </g>
+
+  <!-- ================ PERIPHERAL NODES ================ -->
+  <g fill="#27272a">
+    <circle cx="48"  cy="50"  r="2" opacity="0.15"/>
+    <circle cx="180" cy="48"  r="2" opacity="0.15"/>
+    <circle cx="470" cy="100" r="2" opacity="0.15"/>
+    <circle cx="465" cy="210" r="2" opacity="0.15"/>
+    <circle cx="260" cy="370" r="2" opacity="0.15"/>
+    <circle cx="120" cy="370" r="2" opacity="0.15"/>
+  </g>
+  <g stroke="#27272a" stroke-width="0.5" stroke-linecap="round" stroke-dasharray="2 4">
+    <line x1="48"  y1="50"  x2="78"  y2="68"  opacity="0.08"/>
+    <line x1="180" y1="48"  x2="136" y2="60"  opacity="0.08"/>
+    <line x1="470" y1="100" x2="436" y2="132" opacity="0.08"/>
+    <line x1="465" y1="210" x2="432" y2="184" opacity="0.08"/>
+    <line x1="260" y1="370" x2="230" y2="340" opacity="0.08"/>
+    <line x1="120" y1="370" x2="155" y2="328" opacity="0.08"/>
+  </g>
+</svg>

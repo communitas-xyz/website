@@ -1,0 +1,121 @@
+---
+title: Local Development
+description: How to set up, run, build, and test the Communitas website locally.
+---
+
+## Prerequisites
+
+- **Node.js 22.21.0+** — the project pins this version in `.nvmrc`
+- **npm** — bundled with Node.js, used as the package manager
+- **Git** — for cloning and version control
+
+No other tools, databases, or environment variables are required.
+
+## Setup
+
+1. **Clone the repository**
+
+   ```bash
+   git clone git@github.com:communitas-xyz/website.git communitas.xyz
+   cd communitas.xyz
+   ```
+
+2. **Install the correct Node version**
+
+   If you use [nvm](https://github.com/nvm-sh/nvm):
+
+   ```bash
+   nvm install
+   nvm use
+   ```
+
+   This reads `.nvmrc` and activates Node 22.21.0.
+
+3. **Install dependencies**
+
+   ```bash
+   npm ci
+   ```
+
+   Use `npm ci` (not `npm install`) for a clean, reproducible install from the lockfile.
+
+## Running the dev server
+
+```bash
+npm run dev
+```
+
+The Astro dev server starts at `http://localhost:4321/` with hot module replacement. Changes to `.astro`, `.mdx`, `.ts`, and `.css` files reload automatically.
+
+To expose the server on your local network:
+
+```bash
+npm run dev -- --host 0.0.0.0
+```
+
+The Vite config includes `server.tail14a7e5.ts.net` in `allowedHosts` for Tailscale-based remote development. If you access the dev server over a different hostname, add it to `vite.server.allowedHosts` in `astro.config.mts`.
+
+## Available scripts
+
+| Command             | What it does                                  |
+| ------------------- | --------------------------------------------- |
+| `npm run dev`       | Start the Astro dev server                    |
+| `npm run build`     | Production build to `dist/`                   |
+| `npm run preview`   | Preview the built site locally                |
+| `npm run lint`      | Run ESLint                                    |
+| `npm run format`    | Run Prettier (writes changes)                 |
+| `npm run typecheck` | Run TypeScript type-checking (`tsc --noEmit`) |
+| `npm test`          | Run Vitest (no tests exist yet)               |
+
+## Building for production
+
+```bash
+npm run build
+```
+
+Astro outputs static HTML, CSS, and JS to `dist/`. The build includes:
+
+- The standalone landing page (`src/pages/index.astro`)
+- All Starlight documentation pages (from `src/content/docs/`)
+- Pagefind search index
+- Sitemap
+
+To preview the built site:
+
+```bash
+npm run preview
+```
+
+## Running checks
+
+Run all checks before committing:
+
+```bash
+npm run lint && npm run typecheck && npm run format
+```
+
+The CI pipeline currently runs only `npm run build`. Lint, typecheck, and test steps are not yet enforced in CI.
+
+## Adding content
+
+Documentation pages live in `src/content/docs/` as `.mdx` files. The sidebar auto-generates from the directory structure. To add a new page:
+
+1. Create a `.mdx` file in the appropriate subdirectory (e.g., `src/content/docs/models/new-model.mdx`)
+2. Add frontmatter with at least `title` and `description`
+3. The page appears in the sidebar automatically
+
+See the [site architecture](/internals/site-architecture/) doc for how the landing page and docs relate.
+
+## Troubleshooting
+
+### Vite rejects the Host header
+
+If you access the dev server via a hostname not in `allowedHosts`, Vite returns a 403. Add your hostname to `vite.server.allowedHosts` in `astro.config.mts`.
+
+### Three.js bundle size warning
+
+The build emits a warning about a chunk exceeding 500 kB. This is the Three.js bundle used by the landing page visualization. It only loads on the landing page and does not affect documentation page performance.
+
+### Type errors in `node_modules`
+
+LSP may report errors in `starlight-theme-black` override files (e.g., "Cannot find module 'virtual:starlight-theme-black-config'"). These are false positives — the virtual modules are resolved at build time by the Starlight plugin, not by the TypeScript language server.
